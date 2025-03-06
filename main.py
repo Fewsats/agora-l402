@@ -7,10 +7,76 @@ import whisper
 import uuid
 from pathlib import Path
 from functools import partial
-from agora_l402.core import *
+from agora_l402.core import search_trial
 import asyncio
 from anthropic.types import ToolUseBlock
+import json
 
+def ProductCard(
+    item: str # JSON string containing product details (`name`, `price`, `brand`, `storeName`, `agoraScore`, `images`, `_id`)
+):
+    """
+    Renders a product card UI component displaying product details clearly and attractively.
+    Expects `item` as a JSON-formatted string with these keys:
+    - `name`: Product name (str)
+    - `price`: Product price (float or str)
+    - `brand`: Brand name (str)
+    - `storeName`: Store name (str)
+    - `agoraScore`: Product rating score out of 100 (int or float)
+    - `images`: List of image URLs (list[str]), first image used as main display
+    - `_id`: Unique identifier for the product (str)
+    """
+    item = dict2obj(json.loads(item))
+    
+    # Format price to always have 2 decimal places
+    price = f"${item.price:.2f}" if isinstance(item.price, (int, float)) else f"${item.price}"
+    
+    return to_xml(
+        Card(
+            Div(
+                # Image container with fixed dimensions
+                Div(
+                    Img(src=item.images[0], alt=item.name, 
+                        cls="w-full h-48 object-contain"),
+                    cls="w-full flex items-center justify-center p-2 bg-gray-50"
+                ),
+                
+                # Content container with consistent padding
+                Div(
+                    # Product header with name and price
+                    DivFullySpaced(
+                        H3(item.name, cls="text-lg font-bold line-clamp-2"),
+                        Strong(price, cls="text-lg"),
+                        cls="mb-2"
+                    ),
+                    
+                    # Product details section
+                    Div(
+                        DivLAligned(Strong("Brand:"), Div(item.brand), cls="space-x-2"),
+                        DivLAligned(Strong("Store:"), Div(item.storeName), cls="space-x-2"),
+                        DivLAligned(
+                            Strong("Rating:"), 
+                            Div(f"{item.agoraScore}/100", 
+                                cls=f"px-2 py-1 rounded {'bg-green-100' if item.agoraScore >= 85 else 'bg-yellow-100' if item.agoraScore >= 70 else 'bg-red-100'}"),
+                            cls="space-x-2"
+                        ),
+                        cls="space-y-2 mb-4"
+                    ),
+                    
+                    # Action button
+                    Button("View Details", 
+                           cls=ButtonT.primary, 
+                           id=f"view-{item._id}",
+                           style="width:100%"),
+                    
+                    cls="p-4 flex flex-col justify-between flex-1"
+                ),
+                
+                cls="flex flex-col h-full"
+            ),
+            cls="w-full overflow-hidden h-full"
+        )
+    )
 
 load_dotenv()
 
@@ -26,7 +92,7 @@ blink = Style("""
     }
 """)
 
-hdrs = Theme.blue.headers(), Script(src="/js/record.js"), blink
+hdrs = Theme.gray.headers(), Script(src="/js/record.js"), blink
 app, rt = fast_app(hdrs=hdrs, exts='ws', static_path='public', live=True)
 
 upload_dir = Path("public")
@@ -169,6 +235,29 @@ async def submit(msg: str, send=None):
     print('History: ', history)
     messages.append({"role": "assistant", "content": contents(r)})
     await send(Div(ChatMessage(messages[-1]), hx_swap_oob=swap, id=target))
+
+
+
+@app.route("/test-products")
+def test_products_page():
+    # Perform a hardcoded search
+    search_results = search_trial("headphones")
+    
+    # Extract products from the results
+    products = search_results['Products']
+    # Render just the product grid
+    return Div(
+        # Simple heading
+        H1("Product Cards Test", cls="text-2xl font-bold text-center my-6"),
+        
+        # Product grid
+        *[Div(
+                ProductCard(json.dumps(product)),
+                cls="h-full"
+              ) for product in products],
+            cls="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4"
+        ),
+    
 
 
 if __name__ == '__main__': uvicorn.run("main:app", host='0.0.0.0', port=5039, reload=True)
