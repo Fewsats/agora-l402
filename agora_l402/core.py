@@ -4,7 +4,7 @@
 
 # %% auto 0
 __all__ = ['base_url', 'search_trial', 'text_search', 'get_product_detail', 'create_cart', 'add_to_cart', 'create_order',
-           'track_order', 'refresh_token']
+           'track_order', 'refresh_token', 'ProductCard']
 
 # %% ../nbs/00_core.ipynb 3
 from fastcore.utils import *
@@ -52,7 +52,7 @@ def search_trial(query: str, # Search query text
     # Return parsed JSON response
     return r.json()
 
-# %% ../nbs/00_core.ipynb 7
+# %% ../nbs/00_core.ipynb 8
 def text_search(token, query, count=20, page=1, price_range=None, sort=None, order=None, image_id=None):
     """
     Search for products with full functionality.
@@ -93,7 +93,7 @@ def text_search(token, query, count=20, page=1, price_range=None, sort=None, ord
     # Return parsed JSON response
     return dict2obj(r.json())
 
-# %% ../nbs/00_core.ipynb 8
+# %% ../nbs/00_core.ipynb 9
 def get_product_detail(token, slug):
     """
     Retrieve detailed information about a specific product.
@@ -123,7 +123,7 @@ def get_product_detail(token, slug):
     return dict2obj(r.json())
 
 
-# %% ../nbs/00_core.ipynb 10
+# %% ../nbs/00_core.ipynb 11
 def create_cart(token, custom_user_id=None, items=None):
     """
     Create a new cart for a user.
@@ -168,7 +168,7 @@ def create_cart(token, custom_user_id=None, items=None):
     # Return parsed JSON response
     return dict2obj(r.json())
 
-# %% ../nbs/00_core.ipynb 11
+# %% ../nbs/00_core.ipynb 12
 def add_to_cart(token, product_id, variant_id, quantity=1, custom_user_id=None):
     """
     Add a product to an existing cart.
@@ -213,7 +213,7 @@ def add_to_cart(token, product_id, variant_id, quantity=1, custom_user_id=None):
     # Return parsed JSON response
     return dict2obj(r.json())
 
-# %% ../nbs/00_core.ipynb 12
+# %% ../nbs/00_core.ipynb 13
 def create_order(token, encrypted_payment_info, shipping_address, current_user):
     """
     Create a new order from cart items.
@@ -278,7 +278,7 @@ def create_order(token, encrypted_payment_info, shipping_address, current_user):
     # Return parsed JSON response
     return dict2obj(r.json())
 
-# %% ../nbs/00_core.ipynb 13
+# %% ../nbs/00_core.ipynb 14
 def track_order(token, order_id):
     """
     Track an existing order by its ID.
@@ -307,7 +307,7 @@ def track_order(token, order_id):
     # Return parsed JSON response
     return dict2obj(r.json())
 
-# %% ../nbs/00_core.ipynb 14
+# %% ../nbs/00_core.ipynb 15
 def refresh_token(refresh_token_str):
     """
     Refresh API key and token by providing a valid refresh token.
@@ -346,3 +346,44 @@ def refresh_token(refresh_token_str):
         
     return response
 
+
+# %% ../nbs/00_core.ipynb 26
+import json
+from fasthtml.common import *
+from monsterui.all import *
+
+# %% ../nbs/00_core.ipynb 28
+def ProductCard(
+    item: str # JSON string containing product details (`name`, `price`, `brand`, `storeName`, `agoraScore`, `images`, `_id`)
+):
+    """
+    Renders a product card UI component displaying product details clearly and attractively.
+    Expects `item` as a JSON-formatted string with these keys:
+    - `name`: Product name (str)
+    - `price`: Product price (float or str)
+    - `brand`: Brand name (str)
+    - `storeName`: Store name (str)
+    - `agoraScore`: Product rating score out of 100 (int or float)
+    - `images`: List of image URLs (list[str]), first image used as main display
+    - `_id`: Unique identifier for the product (str)
+    """
+    item = dict2obj(json.loads(item))
+    return to_xml(
+        Card(
+            DivHStacked(
+                # Left column with image
+                Div(
+                    Img(src=item.images[0], alt=item.name, cls="max-h-52 object-contain")
+                ),
+                # Right column with product details
+                DivVStacked(
+                    H3(item.name),
+                    Strong(f"${item.price}"),
+                    Div(f"Brand: {item.brand}"),
+                    Div(f"Store: {item.storeName}"),
+                    Div(f"Rating: {item.agoraScore}/100"),
+                    Button("View Details", id=f"view-{item._id}")
+                )
+            )
+        )
+    )

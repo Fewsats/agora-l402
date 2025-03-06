@@ -8,6 +8,8 @@ import uuid
 from pathlib import Path
 from functools import partial
 from agora_l402.core import *
+import asyncio
+from anthropic.types import ToolUseBlock
 
 
 load_dotenv()
@@ -32,39 +34,10 @@ upload_dir.mkdir(exist_ok=True)
 
 model = whisper.load_model("tiny.en")
 
-
-sp = 'You assist users searching for products in a store and visualizing their shopping cart.'
-# chat = Chat(models[1], sp=sp)
-chat = Chat(models[1], sp=sp, tools=[search_trial])
 os.environ['ANTHROPIC_LOG'] = 'debug'
 
 messages = []
-
-# Chat components
-# def UsrMsg(content, content_id):
-#     if isinstance(content, list):
-#         content = [x['text'] for x in content if x['type'] == 'text'][0]
-
-#     txt_div = Div(content, id=content_id, cls='whitespace-pre-wrap break-words')
-#     return Div(txt_div,
-#             cls='max-w-[70%] ml-auto rounded-3xl bg-[#f4f4f4] px-5 py-2.5 rounded-tr-lg')
-
-# def AIMsg(txt, content_id):
-#     avatar = Div(UkIcon('bot', height=24, width=24),
-#                  cls='h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center')
-#     txt_div = Div(txt, id=content_id, cls='whitespace-pre-wrap break-words ml-3')
-#     return Div(
-#         Div(avatar, txt_div, cls='flex items-start'),
-#         cls='max-w-[70%] rounded-3xl px-5 py-2.5 rounded-tr-lg'
-#     )
-
-# def ChatMessage(msg_idx):
-#     msg = messages[msg_idx]
-#     content_id = f"chat-content-{msg_idx}"
-#     if msg['role'] == 'user':
-#         return UsrMsg(msg['content'], content_id)
-#     else:
-#         return AIMsg(msg['content'], content_id)
+history = None
 
 # Chat message component (renders a chat bubble)
 def ChatMessage(msg):
@@ -75,13 +48,14 @@ def ChatMessage(msg):
 
 
 def ChatInput(text=""):
-    return (Div(id="image-previews", cls="flex flex-wrap gap-1 mb-2"),  # Container for thumbnails
-            Input(placeholder='Message assistant', 
-            value=text,
-            cls='resize-none border-none outline-none bg-transparent w-full shadow-none ring-0 focus:ring-0 focus:outline-none hover:shadow-none text-lg',
-            id='msg-input',
-            name='msg',
-            hx_swap_oob='true')
+    return Div(
+        Input(placeholder='Message assistant', 
+              value=text,
+              cls='resize-none border-none outline-none bg-transparent w-full shadow-none ring-0 focus:ring-0 focus:outline-none hover:shadow-none text-lg',
+              id='msg-input',
+              name='msg'),
+        id='chat-input-container',
+        hx_swap_oob='true'
     )
 
 def MultimodalInput():
@@ -147,29 +121,54 @@ async def transcribe_voice(request):
 @app.route("/")
 def get():
     messages = [] # clear session
+    history = None
     return chat_layout()
 
 
+sample_item = '{"name": "Headphones", "storeName": "The Baby Cubby", "brand": "Tonies", "_id": "6674b4aab49534201189688d", "slug": "tonies-headphones-08c2c9a1-b3af-4883-aebf-2a283a1fc0fd-1718924458056", "price": 29.99, "isVerified": false, "isBoosted": false, "source": "shopify", "images": ["https://cdn.shopify.com/s/files/1/0467/0649/1556/products/Heaphones-PDP-Assets-Gray-1.jpg?v=1637054130", "https://cdn.shopify.com/s/files/1/0467/0649/1556/products/Heaphones-PDP-Assets-Gray-2.jpg?v=1637054132", "https://cdn.shopify.com/s/files/1/0467/0649/1556/products/Heaphones-PDP-Assets-Gray-3.jpg?v=1637054134", "https://cdn.shopify.com/s/files/1/0467/0649/1556/products/blue_8b41cdb7-1f12-4b3d-b43c-8aac607377f3.jpg?v=1637336366", "https://cdn.shopify.com/s/files/1/0467/0649/1556/products/Heaphones-PDP-Assets-Pink-1.jpg?v=1637336366", "https://cdn.shopify.com/s/files/1/0467/0649/1556/products/Reddd.jpg?v=1637336366"], "url": "https://babycubby.com/products/tonies-headphones", "agoraScore": 92, "priceHistory": [{"price": 29.99, "date": "2024-06-20T23:24:59.057Z", "_id": "6713d5706ca0a1804a53068e"}], "discountVal": 0}'
+
+def get_tool_result(tc: ToolUseBlock, history: list):
+    tr =  [tr for tr in history[-1].content if tr.type == 'tool_result' and tr.tool_use_id == tc.id]
+    assert len(tr) == 1
+    return first(tr).content
+
 @app.ws('/wscon')
-async def submit(msg: str, send = None):
+async def submit(msg: str, send=None):
+    global history
     swap = 'beforeend'
     target = 'chatlist'
 
-
     messages.append(mk_msg(msg))
-    # Immediately show user message in chat
-    await send(Div(ChatMessage(messages[-1]), hx_swap_oob='beforeend', id="chatlist"))
-
-
-    # Clear input field via OOB swap
+    await send(Div(ChatMessage(messages[-1]), hx_swap_oob=swap, id=target))
     await send(ChatInput())
+    
+    await asyncio.sleep(1) # to allow chat to be cleared before the next blocking call
 
-    r = chat.toolloop(msg)
+    # Instead of async display_product, we use synchronous ProductCard.
+    # Define a manual tool loop: call the chat once with the incoming msg.
+    sp = 'You assist users searching for products in a store. When displaying a product, use the ProductCard tool.'
+    chat = Chat(models[1], sp=sp, tools=[search_trial, ProductCard])
+    if history: chat.h = history
 
-    # Get and send the model response
-    messages.append({"role":"assistant", "content":contents(r)})
+    r = chat(msg)
+    iteration = 0
+    # Loop until the assistant is finished or max iterations reached.
+    while r.stop_reason == 'tool_use' and iteration < 10:
+        # Check for a tool call that should update the UI (e.g., ProductCard).
+        tc = first([o for o in r.content if isinstance(o, ToolUseBlock)])
+        
+        if tc.name == 'ProductCard':
+            tr = get_tool_result(tc, chat.h)
+            await send(Div(NotStr(tr), hx_swap_oob=swap, id=target))
+
+        # Otherwise, continue the tool loop normally.
+        r = chat()
+        iteration += 1
+
+    history = chat.h
+    print('History: ', history)
+    messages.append({"role": "assistant", "content": contents(r)})
     await send(Div(ChatMessage(messages[-1]), hx_swap_oob=swap, id=target))
 
 
-# LLM Tools
-serve(port=5039)
+if __name__ == '__main__': uvicorn.run("main:app", host='0.0.0.0', port=5039, reload=True)
