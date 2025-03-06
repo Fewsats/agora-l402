@@ -1,0 +1,9 @@
+project:
+  output-dir: _docs
+
+website:
+  title: "agora-l402"
+  site-url: "https://Fewsats.github.io/agora-l402"
+  description: ""
+  repo-branch: main
+  repo-url: "https://github.com/Fewsats/agora-l402"
