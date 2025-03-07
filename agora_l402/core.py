@@ -10,10 +10,8 @@ from fastcore.utils import *
 import os
 import httpx
 from typing import Dict, Any, List
-from time import time, sleep
 import json
-from httpx import HTTPError
-
+from fewsats.core import Fewsats
 
 # %% ../nbs/00_core.ipynb 4
 base_url = 'https://zues.searchagora.com/api/v1'
@@ -344,6 +342,54 @@ def refresh_token(self: Agora,
 
 # %% ../nbs/00_core.ipynb 19
 @patch
+def create_payment_intent(self: Agora,
+                         offer_id: str, # Unique identifier for this offer (can be variant_id for items or user_id for carts)
+                         amount: int, # Payment amount in cents
+                         title: str, # Offer title
+                         description: str, # Offer description
+                         currency: str = "USD"):  # Payment currency
+    """
+    Create a payment intent for a product or cart.
+    
+    Args:
+        offer_id (str): Unique identifier for this offer (variant_id for items, user_id for carts)
+        amount (int): Payment amount in cents
+        title (str): Offer title
+        description (str): Offer description
+        currency (str, optional): Payment currency (default: USD)
+        
+    Returns:
+        dict: Created payment options for product / cart.
+    
+    Example:
+        agora.create_payment_intent(
+            "12345",
+            1999, # 19.99 USD in cents
+            title="Altra Shoes",
+            description="Altra Escalanta v4 running shoes"
+        )
+    """
+    
+    # Create offer data
+    offers_data = [{
+        "offer_id": offer_id,
+        "amount": amount,
+        "currency": currency,
+        "title": title,
+        "description": description,
+        "payment_methods": ["lightning", "credit_card"],
+        'type': 'one-off'
+    }]
+    
+    fs = Fewsats()
+    r = fs.create_offers(offers_data)
+    if not r.is_success:
+        raise ValueError(f"Failed to create payment intent: {r.text}")
+    
+    return r
+
+# %% ../nbs/00_core.ipynb 22
+@patch
 def as_tools(self:Agora):
     "Return list of available tools for AI agents"
     return [
@@ -354,4 +400,5 @@ def as_tools(self:Agora):
         self.create_order,
         self.track_order,
         self.refresh_token,
+        self.create_payment_intent
     ]
