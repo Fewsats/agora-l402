@@ -30,7 +30,7 @@ One of the most powerful features of Agora L402 is its Machine
 Communication Protocol (MCP) server, which enables AI assistants to
 interact with e-commerce functionality directly.
 
-The repository includes a ready-to-use MCP server in the `fastmcp`
+The repository includes a ready-to-use MCP server in the `mcp`
 directory. This allows AI assistants like Claude to:
 
 1.  Search for products with filtering and sorting
@@ -38,14 +38,14 @@ directory. This allows AI assistants like Claude to:
 3.  Create shopping carts and add items
 4.  Generate payment intents
 
-For detailed setup instructions, see the [FastMCP
-README](./fastmcp/README.md).
+For detailed setup instructions, see the [MCP README](./mcp/README.md).
 
 ### Quick Setup
 
-1.  Navigate to FastMCP folder `cd fastmcp`
+1.  Navigate to MCP folder `cd mcp`
 2.  Copy `.env.example` to `.env` and fill in the values.
-3.  Install FastMCP server with `fastmcp install main.py -f .env`
+3.  Install MCP server with
+    `mcp install main.py --name 'Agora E-commerce MCP Serve' --env-file .env`
 
 ### Payment Flow with Fewsats
 

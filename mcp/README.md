@@ -1,8 +1,8 @@
-# FastMCP server for Agora E-commerce API
+# MCP server for Agora E-commerce API
 
 ## Overview
 
-This FastMCP server exposes the Agora E-commerce API as a tool provider for AI assistants like Claude, enabling them to search for products, get product details, manage carts, and track orders.
+This MCP server exposes the Agora E-commerce API as a tool provider for AI assistants like Claude, enabling them to search for products, get product details, manage carts, and track orders.
 
 ## Installation
 
@@ -12,7 +12,7 @@ First, generate the MCP server code:
 python generate.py
 ```
 
-This will create a `main.py` file that contains all the Agora API tools ready to be used with FastMCP.
+This will create a `main.py` file that contains all the Agora API tools ready to be used with MCP.
 
 ## Setup
 
@@ -36,7 +36,7 @@ pip install -r requirements.txt
 To install the MCP server for use with the Claude desktop app:
 
 ```bash
-fastmcp install main.py -f .env
+mcp install main.py --name 'Agora E-commerce MCP Serve' --env-file .env
 ```
 
 This will add the server to `$HOME/Library/Application Support/Claude/claude_desktop_config.json` so Claude can access it directly.
@@ -51,17 +51,17 @@ To use with Cursor:
 2. Select `type: command`
 3. Add the following command:
    ```
-   env AGORA_API_KEY=YOUR_API_KEY uv run --with fastmcp fastmcp run path/to/agora-l402/examples/fastmcp/main.py
+   env AGORA_API_KEY=YOUR_API_KEY uv run --with mcp[cli] mcp run path/to/agora-l402/examples/mcp/main.py
    ```
    - Make sure to replace `YOUR_API_KEY` with your actual Agora API key.
-   - Make sure to replace `path/to/agora-l402/examples/fastmcp/main.py` with the actual path to the main.py file.
+   - Make sure to replace `path/to/agora-l402/examples/mcp/main.py` with the actual path to the main.py file.
 
 ## Debugging
 
 To test the tools locally:
 
 ```bash
-fastmcp dev main.py
+mcp dev main.py
 ```
 
 This will start the development server with an inspector interface where you can test the tools directly.

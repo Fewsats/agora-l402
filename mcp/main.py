@@ -1,6 +1,6 @@
 
 from typing import Dict, List
-from fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP
 from agora_l402.core import Agora
 import os
 import json
