@@ -1,0 +1,72 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "agora-l402",
+    "section": "",
+    "text": "See Agora MCP in action:\nCheck out this example conversation with Claude where Agora and Fewsats MCPs work together to let users search for products and complete purchases.",
+    "crumbs": [
+      "agora-l402"
+    ]
+  },
+  {
+    "objectID": "index.html#overview",
+    "href": "index.html#overview",
+    "title": "agora-l402",
+    "section": "Overview",
+    "text": "Overview\nAgora L402 is an SDK for integrating with the Agora E-commerce API, enabling AI assistants to use the API either as tools or through MCP.\nIt works with the Fewsats library to allow any product to be purchased through the Fewsats payment system.\nThe project provides a Python library exposed as tools for AI agents and an MCP server for seamless integration with AI assistants like Claude.",
+    "crumbs": [
+      "agora-l402"
+    ]
+  },
+  {
+    "objectID": "index.html#mcp-server-integration",
+    "href": "index.html#mcp-server-integration",
+    "title": "agora-l402",
+    "section": "MCP Server Integration",
+    "text": "MCP Server Integration\nOne of the most powerful features of Agora L402 is its Machine Communication Protocol (MCP) server, which enables AI assistants to interact with e-commerce functionality directly.\nThe repository includes a ready-to-use MCP server in the mcp directory. This allows AI assistants like Claude to:\n\nSearch for products with filtering and sorting\nView detailed product information\nCreate shopping carts and add items\nGenerate payment intents\n\nFor detailed setup instructions, see the MCP README.\n\nQuick Setup\n\nNavigate to MCP folder cd mcp\nCopy .env.example to .env and fill in the values.\nInstall MCP server with mcp install main.py --name 'Agora E-commerce MCP Serve' --env-file .env\n\n\n\nPayment Flow with Fewsats\nWhen a payment is required, the Agora MCP server creates a payment intent; however, this intent must be fulfilled by the Fewsats MCP server. This separation of concerns allows for a more secure and modular approach to e-commerce transactions:\n\nAgora MCP: Product search and discovery\nFewsats MCP: Payment processing and fulfillment\n\nTo see this workflow in action, check out this conversation with Claude where both MCPs are used together to create a complete shopping experience.",
+    "crumbs": [
+      "agora-l402"
+    ]
+  },
+  {
+    "objectID": "index.html#python-sdk",
+    "href": "index.html#python-sdk",
+    "title": "agora-l402",
+    "section": "Python SDK",
+    "text": "Python SDK\nThe API is also exposed as a python SDK. Below you can see how to search and generate payment intents:\n\nInstallation\npip install agora-l402\n\nagora = Agora()\n\n# Search for products with Agora\nsearch_results = agora.search_trial(query=\"summer dress\")\nproduct = search_results.json()['Products'][0]\nproduct\n\n{'name': 'Summer Dress',\n 'storeName': 'Jenni Kayne',\n 'brand': 'Jenni Kayne',\n '_id': '6669a49ce5ae459b041cedbf',\n 'slug': 'summer-dress-ink-stripe-1237cfdf-f7de-4a7f-88cf-a24b977495c1-1718199452733',\n 'price': 445,\n 'isVerified': False,\n 'isBoosted': False,\n 'source': 'shopify',\n 'images': ['https://cdn.shopify.com/s/files/1/0565/1234/8333/products/summer-dress-ink-stripe-01_5f8d8e35-7b04-4d3e-ac1e-f7fecfba809e.jpg?v=1677108275',\n  'https://cdn.shopify.com/s/files/1/0565/1234/8333/products/summer-dress-ink-stripe-5.jpg?v=1677602057',\n  'https://cdn.shopify.com/s/files/1/0565/1234/8333/products/summer-dress-ink-stripe-03.jpg?v=1677602057',\n  'https://cdn.shopify.com/s/files/1/0565/1234/8333/products/summer-dress-ink-stripe-04.jpg?v=1677602057'],\n 'url': 'https://jennikayne.com/products/summer-dress-ink-stripe',\n 'agoraScore': 100,\n 'priceHistory': [{'price': 445,\n   'date': '2024-06-12T13:44:27.912Z',\n   '_id': '671466656ca0a1804aaa99bf'}],\n 'discountVal': 0}\n\n\n\n# Generate payment intent (handled by Agora MCP)\npayment_intent = agora.create_payment_intent(title=product['name'], amount=product['price'], currency='USD', offer_id=product['_id'], description=product['name']).json()\npayment_intent\n\n{'offers': [{'offer_id': '6669a49ce5ae459b041cedbf',\n   'amount': 445,\n   'currency': 'USD',\n   'description': 'Summer Dress',\n   'title': 'Summer Dress',\n   'payment_methods': ['lightning', 'credit_card'],\n   'type': 'one-off'}],\n 'payment_context_token': '39016b6b-46e9-44fa-910c-0f06e2fc1c85',\n 'payment_request_url': 'https://api.fewsats.com/v0/l402/payment-request',\n 'version': '0.2.2'}",
+    "crumbs": [
+      "agora-l402"
+    ]
+  },
+  {
+    "objectID": "index.html#ai-agents",
+    "href": "index.html#ai-agents",
+    "title": "agora-l402",
+    "section": "AI Agents",
+    "text": "AI Agents\nThe SDK is exposed as a list of tools that AI agents can use directly without MCP. The example below shows showcases this using Claudette library, a very convenient wrapper for Claude.\n\nfrom agora_l402.core import Agora\n\nagora = Agora()\nfor tool in agora.as_tools():\n    print(tool.__name__)\n\nsearch_trial\nget_product_detail\ncreate_cart\nadd_to_cart\ncreate_order\ntrack_order\nrefresh_token\ncreate_payment_intent\n\n\n\nfrom claudette import Chat, models\n\nmodel = models[1]; model\n\nsystem_prompt = 'You are a helpful assistant that has access to a domain purchase API.'\nchat = Chat(model, sp=system_prompt, tools=agora.as_tools())\n\nchat.run('Find me the most expensive glasses you can.')",
+    "crumbs": [
+      "agora-l402"
+    ]
+  },
+  {
+    "objectID": "core.html",
+    "href": "core.html",
+    "title": "agora_api",
+    "section": "",
+    "text": "source",
+    "crumbs": [
+      "agora_api"
+    ]
+  },
+  {
+    "objectID": "core.html#methods",
+    "href": "core.html#methods",
+    "title": "agora_api",
+    "section": "Methods",
+    "text": "Methods\n\nsource\n\nAgora.text_search\n\n Agora.text_search (query:str, count:int=20, page:int=1, price_min:int=0,\n                    price_max:int=None, sort:str=None, order:str=None,\n                    image_id:str=None)\n\n*Search for products with full functionality.\nArgs: query (str): Search query text count (int, optional): Number of products per page (default: 20, max: 250) page (int, optional): Page number for pagination (default: 1) price_min (int, optional): Minimum price for filtering products (default: 0) price_max (int, optional): Maximum price for filtering products sort (str, optional): Sorting field: price:relevance order (str, optional): Sorting order: asc or desc image_id (str, optional): Image search identifier\nReturns: dict: Search results with products matching the query\nExample: text_search(“red shoes”, count=10, page=1, price_min=50, price_max=200, sort=“price”, order=“asc”)*\n\n\n\n\n\n\n\n\n\n\nType\nDefault\nDetails\n\n\n\n\nquery\nstr\n\nSearch query text\n\n\ncount\nint\n20\nNumber of products per page (default: 20, max: 250)\n\n\npage\nint\n1\nPage number for pagination (default: 1)\n\n\nprice_min\nint\n0\nMinimum price for filtering products\n\n\nprice_max\nint\nNone\nMaximum price for filtering products\n\n\nsort\nstr\nNone\nSorting field: price:relevance\n\n\norder\nstr\nNone\nSorting order: asc or desc\n\n\nimage_id\nstr\nNone\nImage search identifier\n\n\n\n\nsource\n\n\nAgora.get_product_detail\n\n Agora.get_product_detail (slug:str)\n\n*Retrieve detailed information about a specific product.\nArgs: slug (str): The unique identifier of the product to retrieve\nReturns: dict: Detailed information about the requested product\nExample: agora.get_product_detail(“calzuro-without-pistachio-eb12f468-48a2-48af-9f5e-3fda5f6c135c-1708446961787”)*\n\n\n\n\nType\nDetails\n\n\n\n\nslug\nstr\nThe unique identifier of the product to retrieve\n\n\n\n\n# get_product_detail(token, p.slug)\n\n\nsource\n\n\nAgora.create_cart\n\n Agora.create_cart (custom_user_id:str=None, items:List[Dict]=None)\n\n*Create a new cart for a user.\nArgs: custom_user_id (str, optional): Unique identifier for the user items (list, optional): List of items to add to the cart Each item should be a dict with: - variantId (int): Variant ID of the product - product (int/str): Product ID - quantity (int): Quantity of the product\nReturns: dict: Response with cart creation status\nExample: agora.create_cart(“user123”, [ {“variantId”: 123, “product”: “678f71a9356a36f784ee2e88”, “quantity”: 1} ])*\n\n\n\n\nType\nDefault\nDetails\n\n\n\n\ncustom_user_id\nstr\nNone\nUnique identifier for the user\n\n\nitems\nList\nNone\nList of items to add to the cart\n\n\n\n\nsource\n\n\nAgora.add_to_cart\n\n Agora.add_to_cart (product_id:str, variant_id:str, quantity:int=1,\n                    custom_user_id:str=None)\n\n*Add a product to an existing cart.\nArgs: product_id (str/int): ID of the product to add variant_id (str/int): Variant ID of the product quantity (int, optional): Quantity of the product (default: 1) custom_user_id (str, optional): Unique identifier for the user\nReturns: dict: Response with cart update status\nExample: agora.add_to_cart(“678f71a9356a36f784ee2e88”, “2061038485517”, 2, “user123”)*\n\n\n\n\nType\nDefault\nDetails\n\n\n\n\nproduct_id\nstr\n\nID of the product to add\n\n\nvariant_id\nstr\n\nVariant ID of the product\n\n\nquantity\nint\n1\nQuantity of the product (default: 1)\n\n\ncustom_user_id\nstr\nNone\nUnique identifier for the user\n\n\n\n\nsource\n\n\nAgora.create_order\n\n Agora.create_order (encrypted_payment_info:str,\n                     shipping_address:Dict[str,str],\n                     current_user:Dict[str,str])\n\n*Create a new order from cart items.\nArgs: encrypted_payment_info (str): Encrypted payment information shipping_address (dict): Dictionary containing shipping address details: - addressFirst (str): Street address - city (str): City name - state (str): State/province - country (str): Country name - addressName (str): Name associated with address - zipCode (str): Postal/ZIP code current_user (dict): Dictionary containing user information: - firstname (str): User’s first name - lastname (str): User’s last name - email (str): User’s email address - _id (str): User’s ID\nReturns: dict: Order creation response with success status and order ID\nExample: agora.create_order( “encrypted_data”, { “addressFirst”: “123 Main St”, “city”: “New York”, “state”: “NY”, “country”: “US”, “addressName”: “Home”, “zipCode”: “10001” }, { “firstname”: “John”, “lastname”: “Doe”, “email”: “john@example.com”, “_id”: “user123” } )*\n\n\n\n\n\n\n\n\n\nType\nDetails\n\n\n\n\nencrypted_payment_info\nstr\nEncrypted payment information\n\n\nshipping_address\nDict\nDictionary containing shipping address details\n\n\ncurrent_user\nDict\nDictionary containing user information\n\n\n\n\nsource\n\n\nAgora.track_order\n\n Agora.track_order (order_id:str)\n\n*Track an existing order by its ID.\nArgs: order_id (str): Unique identifier of the order to track\nReturns: dict: Detailed order information including items, status, and shipping details\nExample: agora.track_order(“67c8577b3e370f07d12c7722”)*\n\n\n\n\nType\nDetails\n\n\n\n\norder_id\nstr\nUnique identifier of the order to track\n\n\n\n\nsource\n\n\nAgora.refresh_token\n\n Agora.refresh_token (refresh_token_str:str)\n\n*Refresh API key and token by providing a valid refresh token.\nArgs: refresh_token_str (str): The refresh token to validate and retrieve a new API key and refresh token\nReturns: dict: Object containing new API key, refresh token, and expiration time with the following structure: { “status”: “success”, “data”: { “apiKey”: “…”, “refreshToken”: “…”, “expiresAt”: “…” } }\nRaises: ValueError: If the refresh token is invalid or missing*\n\n\n\n\nType\nDetails\n\n\n\n\nrefresh_token_str\nstr\nThe refresh token to validate\n\n\n\n\nsource\n\n\nAgora.create_payment_intent\n\n Agora.create_payment_intent (offer_id:str, amount:int, title:str,\n                              description:str, currency:str='USD')\n\n*Create a payment intent for a product or cart.\nArgs: offer_id (str): Unique identifier for this offer (variant_id for items, user_id for carts) amount (int): Payment amount in cents title (str): Offer title description (str): Offer description currency (str, optional): Payment currency (default: USD)\nReturns: dict: Created payment options for product / cart.\nExample: agora.create_payment_intent( “12345”, 1999, # 19.99 USD in cents title=“Altra Shoes”, description=“Altra Escalanta v4 running shoes” )*\n\n\n\n\n\n\n\n\n\n\nType\nDefault\nDetails\n\n\n\n\noffer_id\nstr\n\nUnique identifier for this offer (can be variant_id for items or user_id for carts)\n\n\namount\nint\n\nPayment amount in cents\n\n\ntitle\nstr\n\nOffer title\n\n\ndescription\nstr\n\nOffer description\n\n\ncurrency\nstr\nUSD\nPayment currency\n\n\n\n\n# requires a FEWSATS_API_KEY environment variable\na.create_payment_intent( \"12345\", 1999,  title=\"Altra Shoes\", description=\"Altra Escalanta v4 running shoes\")\n\n{'offers': [{'offer_id': '12345',\n   'amount': 1999,\n   'currency': 'USD',\n   'description': 'Altra Escalanta v4 running shoes',\n   'title': 'Altra Shoes',\n   'payment_methods': ['lightning', 'credit_card'],\n   'type': 'one-off'}],\n 'payment_context_token': '00ce3d89-8313-4e39-a5a1-e21e2feab3c8',\n 'payment_request_url': 'https://api.fewsats.com/v0/l402/payment-request',\n 'version': '0.2.2'}\n\n\n\ndata = {\n  \"title\": \"Eco-friendly Ball Point Pen\",\n  \"amount\": 22,\n  \"currency\": \"USD\",\n  \"offer_id\": \"promotion-pen-22-cents\",\n  \"description\": \"Promotion Gift Wholesale Cheap Eco-friendly Custom Logo Ball Point Pen\"\n}\na.create_payment_intent(**data)\n\n{'offers': [{'offer_id': 'promotion-pen-22-cents',\n   'amount': 22,\n   'currency': 'USD',\n   'description': 'Promotion Gift Wholesale Cheap Eco-friendly Custom Logo Ball Point Pen',\n   'title': 'Eco-friendly Ball Point Pen',\n   'payment_methods': ['lightning', 'credit_card'],\n   'type': 'one-off'}],\n 'payment_context_token': '4ad5d7c8-4485-4166-81ae-356725d9ec9a',\n 'payment_request_url': 'https://api.fewsats.com/v0/l402/payment-request',\n 'version': '0.2.2'}\n\n\n\nsource\n\n\nAgora.as_tools\n\n Agora.as_tools ()\n\nReturn list of available tools for AI agents",
+    "crumbs": [
+      "agora_api"
+    ]
+  }
+]
